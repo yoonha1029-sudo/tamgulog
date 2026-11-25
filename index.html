@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>탐구로그 프로토타입</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light dark;--bg:light-dark(#fff,#111827);--paper:light-dark(#fff,#182235);--ink:light-dark(#1a1a1a,#edf1f7);--mute:light-dark(#596273,#b0bacb);--line:light-dark(#d7dce4,#354258);--blue:light-dark(#174ea6,#8ab4f8);--blue2:light-dark(#edf3fc,#202f47);--hl:#f2cf5b;--hlbg:light-dark(#fff8df,#3a321b)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Noto Sans KR",system-ui,sans-serif;overflow-x:hidden}
+h1,h2,h3{font-weight:700;line-height:1.25;margin:0;text-wrap:balance}header{background:var(--paper);color:var(--ink);border-bottom:1px solid var(--line);padding:14px max(4vw,16px);display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center}
+header h1{font-size:28px}header .sub{font-size:14px;color:var(--mute)}nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}nav a{color:var(--ink);text-decoration:none;padding:10px 14px;border-radius:7px;font-weight:500;min-height:44px;display:flex;align-items:center}nav a[aria-current=page]{background:var(--blue);color:#fff}
+nav a:focus-visible,button:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--hl);outline-offset:2px}main{max-width:1180px;margin:0 auto;padding:24px max(4vw,16px) 48px}.note{font-size:14px;color:var(--mute);margin:0 0 16px}
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:clamp(16px,3vw,28px)}.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}.bar h2{font-size:28px}.meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:14px;color:var(--mute)}
+select,input[type=text]{font:inherit;font-size:16px;padding:9px 12px;border:1px solid var(--line);border-radius:7px;background:var(--paper);color:var(--ink);min-height:44px}.timer{font:700 26px/1 "Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums;background:var(--paper);border:1px solid var(--blue);color:var(--blue);padding:9px 14px;border-radius:7px;white-space:nowrap}.timer.over{border-color:var(--mute);color:var(--mute)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:14px}.field label{display:flex;justify-content:space-between;gap:8px;font-weight:700;margin-bottom:6px}.field label small{font-weight:400;color:var(--mute);font-size:13px}
+textarea{width:100%;font:inherit;font-size:16px;min-height:92px;padding:10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);resize:vertical}.cue{font-size:14px;color:var(--mute);margin-top:6px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center}
+button{font:inherit;font-weight:700;font-size:16px;min-height:44px;padding:10px 18px;border-radius:7px;border:1px solid var(--blue);background:var(--blue);color:#fff;cursor:pointer}button.ghost{background:transparent;color:var(--blue)}button:disabled{opacity:.55;cursor:not-allowed}button.small{min-height:44px;padding:8px 12px;font-size:14px}
+.hint{margin-top:16px;background:var(--hlbg);border-left:4px solid var(--hl);border-radius:6px;padding:14px 16px}.hint b{display:block;margin-bottom:4px}.hint .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.toast{margin-top:14px;padding:12px 14px;border-radius:7px;background:var(--blue2);color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.stat{background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:14px}.stat .n{font:700 clamp(24px,4vw,32px)/1.1 "Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}.stat .l{font-size:14px;color:var(--mute)}.meter{height:6px;background:var(--line);border-radius:4px;margin-top:8px;overflow:hidden}.meter i{display:block;height:100%;background:var(--blue)}
+table{width:100%;border-collapse:collapse;background:var(--paper);font-size:15px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:14px;color:var(--mute);font-weight:500}td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}tr.sel td{background:var(--blue2)}tbody tr{cursor:pointer}tbody tr:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
+.tag{display:inline-block;font-size:13px;padding:2px 8px;border-radius:999px;background:var(--blue2);color:var(--blue);white-space:nowrap}.tag.no{background:transparent;border:1px solid var(--line);color:var(--mute)}.tag.flag{background:var(--hlbg);color:var(--ink)}.detail{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:16px}
+.cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0}.cmp div{background:var(--bg);border-radius:6px;padding:10px;font-size:14px}.cmp h4{margin:0 0 4px;font-size:14px;color:var(--mute)}.tl{list-style:none;margin:0;padding:0 0 0 28px;border-left:2px solid var(--blue);display:grid;gap:16px}.tl li{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:14px 16px}.tl li::before{content:"";position:absolute;left:-37px;top:18px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--blue)}
+.tl .when{font-size:14px;color:var(--mute)}.tl .q{font-size:18px;font-weight:700;margin:4px 0}.tl mark{background:var(--hl);color:#1a1a1a;padding:0 3px;border-radius:3px}.lv{font-size:14px;font-weight:700;color:var(--blue)}.tl dl{display:grid;grid-template-columns:5.5em minmax(0,1fr);gap:2px 10px;margin:8px 0 0;font-size:14px}.tl dt{color:var(--mute)}.tl dd{margin:0}.fb{margin-top:8px;font-size:14px;border-top:1px dashed var(--line);padding-top:8px}[hidden]{display:none!important}.scroll{overflow-x:auto}
+@media(max-width:760px){.grid,.cmp{grid-template-columns:minmax(0,1fr)}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}nav{margin-left:0}}@media(max-width:600px){.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:6.5em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:6em;margin-inline-start:-6.5em;color:var(--mute);font-size:14px}.stack td:empty{display:none}.bar h2{font-size:25px}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>탐구로그</h1><div class="sub">매 수업 3분, 탐구 과정을 이어 쓰는 기록</div></div>
+  <nav aria-label="화면 전환">
+    <a href="#student" data-v="student">학생 기록</a>
+    <a href="#teacher" data-v="teacher">교사 학급 보기</a>
+    <a href="#timeline" data-v="timeline">내 타임라인</a>
+  </nav>
+</header>
+<main>
+<p class="note">프로토타입 시연용 화면입니다. 학급·학생·기록은 모두 예시 데이터이며, AI 질문 코치는 규칙 기반 질문으로 동작을 흉내 냅니다.</p>
+
+<section id="v-student" hidden>
+  <div class="sheet">
+    <div class="bar">
+      <div><h2>오늘의 탐구 기록</h2>
+        <div class="meta"><span>중3 과학 · 2단원 기권과 날씨 · 4차시</span>
+          <label>교과 템플릿 <select id="subj"><option value="sci">과학</option><option value="soc">사회</option><option value="tech">기술</option></select></label></div></div>
+      <div class="timer" id="timer" aria-live="off">3:00</div>
+    </div>
+    <div class="grid" id="fields"></div>
+    <div class="actions">
+      <button id="hintBtn" class="ghost" disabled>힌트 보기 (2회 남음)</button>
+      <button id="submit">기록 제출</button>
+      <span class="cue" id="hintCue">4개 항목을 모두 직접 쓰면 힌트 버튼이 켜집니다.</span>
+    </div>
+    <div id="hintBox"></div>
+    <div id="done"></div>
+  </div>
+</section>
+
+<section id="v-teacher" hidden>
+  <div class="bar"><div><h2>3학년 4반 · 4차시 기록 현황</h2><div class="meta">중3 과학 · 기권과 날씨 · 표의 행을 누르면 상세 기록과 힌트 전·후 비교가 보입니다.</div></div></div>
+  <div class="stats" id="stats"></div>
+  <div class="scroll"><table class="stack" id="tbl"><thead><tr><th>번호</th><th>학생</th><th>제출</th><th>내 질문</th><th>다음 계획</th><th>소요</th><th>힌트</th></tr></thead><tbody></tbody></table></div>
+  <div id="detail"></div>
+</section>
+
+<section id="v-timeline" hidden>
+  <div class="bar"><div><h2>내 탐구 타임라인</h2><div class="meta">예시 학생 김하늘 · 중3 과학 · 습도 탐구 · 질문 단계는 2-5 '질문 발전' 루브릭 기준(교사 채점)</div></div></div>
+  <ol class="tl" id="tl"></ol>
+</section>
+</main>
+
+<script>
+{
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const T={
+ sci:{obs:['관찰','실험·현상에서 본 것, 잰 값'],q:['질문','가설: 무엇이 무엇에 영향을 줄까?'],ev:['근거와 현재 생각','측정값·자료와 지금의 판단'],nx:['다음에 확인할 것','다음 수업에 확인할 한 가지']},
+ soc:{obs:['관찰','쟁점: 자료에서 눈에 띈 것'],q:['질문','어떤 관점에서 보고 싶은가?'],ev:['근거와 현재 생각','자료 출처(누가, 언제)와 해석'],nx:['다음에 확인할 것','다른 관점의 자료 찾기 등']},
+ tech:{obs:['관찰','문제: 사용자가 겪는 불편'],q:['질문','아이디어: 어떻게 해결할까?'],ev:['근거와 현재 생각','시험·비교 결과와 판단'],nx:['다음에 확인할 것','개선할 점 한 가지']}
+};
+const KEYS=['obs','q','ev','nx'];
+const CARD={sci:'이 결과가 다른 조건(온도, 장소, 시간)에서도 같을지 확인할 방법이 있을까요?',soc:'이 쟁점을 다르게 보는 사람은 어떤 자료를 근거로 들까요?',tech:'사용자가 이 아이디어를 처음 쓸 때 가장 먼저 불편할 점은 무엇일까요?'};
+let subj='sci',hintsLeft=2,shown=[],before=null,start=null,tick=null,flagged=0;
+const $=id=>document.getElementById(id);
+
+function drawFields(){
+  const t=T[subj];
+  $('fields').innerHTML=KEYS.map(k=>`<div class="field"><label for="f-${k}">${t[k][0]} <small>직접 작성</small></label><textarea id="f-${k}" placeholder="${esc(t[k][1])}"></textarea></div>`).join('');
+  KEYS.forEach(k=>$('f-'+k).addEventListener('input',onInput));
+  onInput();
+}
+function vals(){const o={};KEYS.forEach(k=>o[k]=$('f-'+k).value.trim());return o}
+function onInput(){
+  if(!start&&KEYS.some(k=>$('f-'+k).value)){start=Date.now();tick=setInterval(drawTimer,500)}
+  const all=KEYS.every(k=>$('f-'+k).value.trim().length>0);
+  $('hintBtn').disabled=!all||hintsLeft<=0;
+  $('hintBtn').textContent=`힌트 보기 (${hintsLeft}회 남음)`;
+  $('hintCue').textContent=hintsLeft<=0?'이번 기록의 힌트를 모두 사용했습니다. 스스로 다듬어 보세요.':all?'힌트는 답이 아니라 질문으로만 나옵니다.':'4개 항목을 모두 직접 쓰면 힌트 버튼이 켜집니다.';
+}
+function secs(){return start?Math.round((Date.now()-start)/1000):0}
+function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function drawTimer(){const r=180-secs();const el=$('timer');el.textContent=r>=0?fmt(r):'+'+fmt(-r);el.classList.toggle('over',r<0)}
+
+function pickHint(v){
+  const c=[];
+  if(/인터넷|봤다|들었다|유튜브|검색/.test(v.ev)||v.ev.length<12)c.push(['근거','그 자료는 누가, 언제 만들었나요? 같은 내용을 말하는 다른 자료가 있는지 확인해 볼까요?']);
+  if(/왜|좋을까|신기|궁금/.test(v.q)&&v.q.length<25)c.push(['질문',"'왜'를 어떤 기준으로 확인하고 싶나요? 비교할 조건 하나를 골라 질문을 다시 써 볼까요?"]);
+  if(subj==='sci'&&!/\d/.test(v.obs))c.push(['관찰','무엇과 비교해서 그렇게 보였나요? 시간이나 온도처럼 숫자로 적을 수 있는 것이 있을까요?']);
+  if(/더 조사|조사하기|알아보기|찾아보기/.test(v.nx)||v.nx.length<10)c.push(['다음 계획','다음 수업 10분 안에 확인할 수 있는 것 하나를 정한다면 무엇인가요?']);
+  c.push(['생각 단서',CARD[subj]]);
+  return c.find(h=>!shown.includes(h[1]))||c[c.length-1];
+}
+$('hintBtn').addEventListener('click',()=>{
+  if(hintsLeft<=0)return;
+  if(!before)before=vals();
+  const h=pickHint(vals());shown.push(h[1]);hintsLeft--;
+  $('hintBox').innerHTML=`<div class="hint" role="status"><b>AI 질문 코치 · ${esc(h[0])}</b>${esc(h[1])}<div class="row"><button class="small ghost" id="hOk">고쳐 쓸게요</button><button class="small ghost" id="hBad">도움 안 됨 / 이상함</button></div></div>`;
+  $('hOk').onclick=()=>{$('hintBox').innerHTML='';$('f-'+({근거:'ev',질문:'q',관찰:'obs','다음 계획':'nx'}[h[0]]||'q')).focus()};
+  $('hBad').onclick=()=>{flagged++;$('hintBox').innerHTML='<div class="toast">신고가 선생님 화면에 표시됩니다. 원래 기록은 그대로 저장돼요.</div>'};
+  onInput();
+});
+$('submit').addEventListener('click',()=>{
+  const v=vals();
+  const empty=KEYS.filter(k=>!v[k]).map(k=>T[subj][k][0]);
+  if(empty.length){$('done').innerHTML=`<div class="toast">아직 비어 있는 항목: ${esc(empty.join(', '))}</div>`;return}
+  const rec={no:26,name:'나 (체험)',ok:true,subject:subj,t:secs(),q:v.q,nx:v.nx,obs:v.obs,ev:v.ev,hints:2-hintsLeft,flag:flagged,before:before,hintText:shown.slice(),fb:''};
+  const i=ROWS.findIndex(r=>r.no===26);if(i>=0)ROWS[i]=rec;else ROWS.push(rec);
+  try{localStorage.setItem('tamgulog-me',JSON.stringify(rec))}catch(e){}
+  clearInterval(tick);
+  $('done').innerHTML=`<div class="toast">제출했어요 · 소요 ${fmt(rec.t)} · 힌트 ${rec.hints}회. <a href="#teacher">교사 학급 보기</a>에서 내 기록이 어떻게 보이는지 확인해 보세요.</div>`;
+});
+$('subj').addEventListener('change',e=>{subj=e.target.value;drawFields()});
+
+const N=['김하늘','이도윤','박서준','최지우','정하은','강민준','조예린','윤시우','장서아','임주원','한지호','오유나','서건우','신채원','권도현','황수아','안태윤','송다인','류준서','홍지안','전민서','고은찬','문하린','배승우','남예서'];
+const S=[
+ ['습도가 높으면 빨래가 왜 늦게 마를까?','교실과 복도에서 같은 수건 마르는 시간 재기',150,0],
+ ['기온이 같아도 습도에 따라 체감 온도가 달라질까?','습도계로 오전·오후 교실 습도 비교',170,1],
+ ['왜 비 오는 날 습할까?','더 조사하기',95,2],
+ ['이슬점과 상대 습도는 어떤 관계일까?','건습구 습도표로 이슬점 구해 보기',205,1],
+ ['가습기 사용 전후 교실 습도는 얼마나 달라질까?','쉬는 시간마다 습도 3번 기록',160,0],
+ ['습도가 높으면 왜 끈적할까?','찾아보기',80,2],
+ ['창문을 열면 교실 습도는 낮아질까 높아질까?','창문 연 10분 전후 측정',140,1],
+ ['겨울에 정전기가 많은 건 습도 때문일까?','습도별 정전기 횟수 비교 방법 정하기',190,1],
+];
+const ROWS=N.map((name,i)=>{
+  if([5,11,17,21,23,24].includes(i))return{no:i+1,name,ok:false};
+  const s=S[i%S.length];
+  return{no:i+1,name,ok:true,q:s[0],nx:s[1],t:s[2]+(i%3)*7,hints:s[3],flag:i===8?1:0,obs:'(예시) 측정값 기록',ev:'(예시) 근거 기록',
+    before:s[3]?{q:s[0].replace(/는 얼마나.*|과 상대.*|에 따라.*/,'는 왜 그럴까?'),nx:'더 조사하기'}:null,hintText:s[3]?["'왜'를 어떤 기준으로 확인하고 싶나요? 비교할 조건 하나를 골라 질문을 다시 써 볼까요?"]:[],fb:i===0?'비교 조건을 잘 잡았어요. 수건 크기도 같게 맞춰 볼까요?':''};
+});
+try{const me=JSON.parse(localStorage.getItem('tamgulog-me')||'null');if(me&&me.q)ROWS.push(me)}catch(e){}
+let sel=null;
+function drawTeacher(){
+  const sub=ROWS.filter(r=>r.ok),tot=ROWS.length,rate=Math.round(sub.length/tot*100);
+  const ts=sub.map(r=>r.t).sort((a,b)=>a-b),med=ts.length?ts[Math.floor(ts.length/2)]:0;
+  const hu=sub.filter(r=>r.hints>0).length,fl=sub.reduce((a,r)=>a+(r.flag||0),0),fbn=sub.filter(r=>r.fb).length;
+  $('stats').innerHTML=[
+   [`${sub.length}/${tot}`,'기록 제출',rate],[fmt(med),'소요 시간 중앙값 (목표 3:00 이내)',Math.min(100,Math.round(med/180*100))],
+   [`${hu}명`,`힌트 사용 · '이상함' 신고 ${fl}건`,Math.round(hu/Math.max(1,sub.length)*100)],[`${fbn}명`,'피드백 남김',Math.round(fbn/Math.max(1,sub.length)*100)]
+  ].map(s=>`<div class="stat"><div class="n">${esc(s[0])}</div><div class="l">${esc(s[1])}</div><div class="meter"><i style="width:${s[2]}%"></i></div></div>`).join('');
+  $('tbl').tBodies[0].innerHTML=ROWS.map(r=>`<tr data-no="${r.no}" class="${sel===r.no?'sel':''}" tabindex="0"><td class="num">${r.no}</td><td>${esc(r.name)}</td><td>${r.ok?'<span class="tag">제출</span>':'<span class="tag no">미제출</span>'}</td><td>${r.ok?esc(r.q):''}</td><td>${r.ok?esc(r.nx):''}</td><td class="num">${r.ok?fmt(r.t):''}</td><td class="num">${r.ok?r.hints+'회'+(r.flag?' <span class="tag flag">신고</span>':''):''}</td></tr>`).join('');
+  const labels=['번호','학생','제출','내 질문','다음 계획','소요','힌트'];
+  [...$('tbl').tBodies[0].rows].forEach(tr=>{[...tr.cells].forEach((td,i)=>td.dataset.l=labels[i]);const go=()=>{sel=+tr.dataset.no;drawTeacher();drawDetail()};tr.onclick=go;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
+}
+function drawDetail(){
+  const r=ROWS.find(x=>x.no===sel);if(!r){$('detail').innerHTML='';return}
+  if(!r.ok){$('detail').innerHTML=`<div class="detail"><h3>${esc(r.name)}</h3><p>아직 기록을 제출하지 않았습니다. 다음 수업 시작 때 지난 기록 확인을 안내해 주세요.</p></div>`;return}
+  const b=r.before;
+  $('detail').innerHTML=`<div class="detail"><h3>${r.no}번 ${esc(r.name)}</h3>
+   ${r.hints?`<p class="cue">받은 힌트: ${r.hintText.map(esc).join(' / ')}</p><div class="cmp"><div><h4>힌트 전</h4>${esc(b?.q||'')}<br>${esc(b?.nx||'')}</div><div><h4>힌트 후 (제출본)</h4>${esc(r.q)}<br>${esc(r.nx)}</div></div>`:'<p class="cue">힌트 없이 스스로 작성한 기록입니다.</p>'}
+   <label for="fbIn"><b>짧은 피드백</b></label>
+   <div class="actions" style="margin-top:6px"><input type="text" id="fbIn" style="flex:1 1 260px" value="${esc(r.fb)}" placeholder="예: 비교할 조건을 하나만 정해 볼까요?"><button class="small" id="fbSave">저장</button></div></div>`;
+  $('fbSave').onclick=()=>{r.fb=$('fbIn').value.trim();if(r.no===26){try{localStorage.setItem('tamgulog-me',JSON.stringify(r))}catch(e){}}drawTeacher();drawDetail()};
+}
+
+const TL=[
+ {d:'1차시 · 9월 2주',lv:1,q:'습도는 왜 생길까?',obs:'비 오는 날 교실 창문에 물방울이 맺혔다.',ev:'인터넷에서 봤다.',nx:'더 조사하기',fb:'물방울이 맺힌 조건을 하나 더 적어 볼까요?'},
+ {d:'2차시 · 9월 3주',lv:2,q:'비 오는 날 교실 습도는 맑은 날보다 높을까?',obs:'습도계: 비 오는 날 78%, 맑은 날 52%.',ev:'교실 습도계 측정값. 비 오는 날이 더 높다고 생각한다.',nx:'같은 시각에 다시 재기',fb:'측정 시각을 맞춘 점이 좋아요.'},
+ {d:'3차시 · 9월 4주',lv:2,q:'창문을 열면 교실 습도가 바뀔까?',obs:'창문 10분 열기 전 65%, 연 뒤 70%.',ev:'측정값. 바깥 습도가 더 높아서 올라간 것 같다.',nx:'바깥 습도도 같이 재기',fb:''},
+ {d:'4차시 · 10월 1주',lv:3,q:'<mark>바깥 습도가 교실보다 높을 때</mark> 창문을 열면 교실 습도는 얼마나 오를까?',obs:'바깥 74%, 교실 63% → 10분 뒤 69%.',ev:'3차시 결과를 바탕으로 바깥 습도를 함께 측정했다. 바깥과의 차이가 클수록 많이 오른다고 생각한다.',nx:'차이가 작은 날 한 번 더 비교',fb:'지난 기록의 한계를 질문에 반영했어요.'}
+];
+function drawTimeline(){
+  let entries=TL;
+  try{const me=JSON.parse(localStorage.getItem('tamgulog-me')||'null');if(me&&me.q)entries=[{d:'방금 제출한 기록 · 나 (체험)',lv:1,q:me.q,obs:me.obs,ev:me.ev,nx:me.nx,fb:me.fb,own:true},...TL]}catch(e){}
+  $('tl').innerHTML=entries.map(t=>`<li><div class="when">${esc(t.d)} · <span class="lv">질문 ${t.lv}단계</span></div><div class="q">${t.own?esc(t.q):t.q}</div><dl><dt>관찰</dt><dd>${esc(t.obs)}</dd><dt>근거·생각</dt><dd>${esc(t.ev)}</dd><dt>다음 계획</dt><dd>${esc(t.nx)}</dd></dl>${t.fb?`<div class="fb">선생님: ${esc(t.fb)}</div>`:''}</li>`).join('');
+}
+
+function route(){
+  const v=['student','teacher','timeline'].includes(location.hash.slice(1))?location.hash.slice(1):'student';
+  ['student','teacher','timeline'].forEach(x=>$('v-'+x).hidden=x!==v);
+  document.querySelectorAll('nav a').forEach(a=>{if(a.dataset.v===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+  if(v==='teacher')drawTeacher();
+  if(v==='timeline')drawTimeline();
+}
+window.addEventListener('hashchange',route);
+drawFields();route();
+}
+</script>
+</body>
+</html>
